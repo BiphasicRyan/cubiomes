@@ -5,12 +5,14 @@
 
 #include "loot/loot_tables.h"
 #include "loot/loot_table_context.h"
+#include "loot/items.h"
 
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <string.h>
 
 static inline int64_t sqr64(int64_t a) { return a * a; }
 
@@ -54,10 +56,22 @@ static void print_loot(const char *lootTable, int mc, uint64_t lootSeed)
         return;
     }
 
-    // Print as IDs+counts for now (reliable). We can upgrade to names later.
     for (int i = 0; i < ctx->generated_item_count; i++) {
         ItemStack it = ctx->generated_items[i];
-        printf("      item id=%d count=%d\n", it.item, it.count);
+        
+        // Convert local item ID to global item ID first
+        int globalItemId = get_global_item_id(ctx, it.item);
+        const char *itemName = global_id2item_name(globalItemId, mc);
+        
+        if (itemName) {
+            const char *displayName = itemName;
+            if (strncmp(itemName, "minecraft:", 10) == 0) {
+                displayName = itemName + 10;
+            }
+            printf("      %s x%d\n", displayName, it.count);
+        } else {
+            printf("      item id=%d (local=%d) count=%d\n", globalItemId, it.item, it.count);
+        }
     }
 }
 
